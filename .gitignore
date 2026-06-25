@@ -1,0 +1,33 @@
+# --- Dados da Receita (NÃO versionar — vários GB, dados públicos baixáveis) ---
+dados brutos/
+*.ESTABELE
+*.SOCIOCSV
+*.MUNICCSV
+*.EMPRECSV
+*.ESTABELE*
+*.csv
+.cache_utf8/
+*.parquet
+
+# --- Resultados gerados ---
+estabelecimentos_filtrados.csv
+
+# --- Ambiente Python ---
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.python-version
+
+# --- Sistema operacional ---
+.DS_Store
+Thumbs.db
+
+# --- Editores / IDE ---
+.vscode/
+.idea/
+*.swp
+
+# --- Streamlit ---
+.streamlit/secrets.toml
