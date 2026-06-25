@@ -23,7 +23,10 @@ import streamlit as st
 
 # Pasta padrão onde estão os arquivos de estabelecimentos.
 # Pode ser sobrescrita pela variável de ambiente CNAE_DATA_DIR ou pelo campo na UI.
-DEFAULT_DATA_DIR = os.environ.get("CNAE_DATA_DIR", os.path.dirname(os.path.abspath(__file__)))
+DEFAULT_DATA_DIR = os.environ.get(
+    "CNAE_DATA_DIR",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "dados brutos"),
+)
 
 # Padrão (glob) que identifica os arquivos de estabelecimentos dentro da pasta.
 DEFAULT_FILE_GLOB = "*ESTABELE*"
@@ -179,20 +182,66 @@ def run_filter(
 # UI
 # ---------------------------------------------------------------------------
 
-st.set_page_config(page_title="Filtro CNAE — Receita", layout="wide")
-st.title("Filtro CNAE — Estabelecimentos (Receita Federal)")
 
-data_dir = st.text_input("Pasta dos arquivos de estabelecimentos", value=DEFAULT_DATA_DIR)
-file_glob = st.text_input("Padrão dos arquivos (glob)", value=DEFAULT_FILE_GLOB)
+st.set_page_config(page_title="Filtro de CNPJs por CNAE", layout="wide")
+st.title("Filtro de CNPJs por CNAE")
+st.caption(
+    "Filtre os arquivos de estabelecimentos da Receita Federal por código CNAE "
+    "e baixe o resultado em CSV."
+)
 
-cnae_input = st.text_input("Códigos CNAE (separados por vírgula)", placeholder="ex.: 4754701, 4753900")
-include_secondary = st.checkbox("Incluir CNAE secundária", value=True)
+# Formulário numa coluna estreita; a tabela de resultados usa a largura total.
+form_col, _ = st.columns([3, 2])
 
-if st.button("Filtrar", type="primary"):
+with form_col:
+    st.subheader("1. Selecione a pasta com os arquivos brutos")
+
+    data_dir = st.text_input(
+        "Cole ou digite o caminho da pasta",
+        value=DEFAULT_DATA_DIR,
+        help="Pasta onde estão os arquivos brutos de estabelecimentos da Receita Federal. "
+        "Dica: no Finder, clique com o botão direito na pasta › Obter Informações para ver o caminho.",
+    )
+
+    if os.path.isdir(data_dir):
+        n_files = len(glob.glob(os.path.join(data_dir, DEFAULT_FILE_GLOB)))
+        if n_files:
+            st.success(f"✅ {n_files} arquivo(s) encontrado(s) na pasta.")
+        else:
+            st.warning("⚠️ Nenhum arquivo de estabelecimentos encontrado nesta pasta.")
+    else:
+        st.info("Cole o caminho de uma pasta válida.")
+
+    with st.expander("Opções avançadas"):
+        file_glob = st.text_input(
+            "Padrão dos arquivos (glob)",
+            value=DEFAULT_FILE_GLOB,
+            help="Padrão usado para localizar os arquivos de estabelecimentos na pasta.",
+        )
+
+    st.subheader("2. Informe os códigos CNAE")
+
+    cnae_input = st.text_input(
+        "Códigos CNAE",
+        placeholder="ex.: 4754701, 4753900",
+        help="Use apenas números. Para mais de um código, separe por vírgula.",
+    )
+    st.caption("ℹ️ Apenas números (sem pontos, traços ou barras).")
+    include_secondary = st.checkbox("Incluir CNAE secundária", value=True)
+
+    filtrar = st.button("Filtrar", type="primary")
+
+if filtrar:
     cnaes = [c.strip() for c in cnae_input.split(",") if c.strip()]
+    invalid = [c for c in cnaes if not c.isdigit()]
 
     if not cnaes:
         st.warning("Informe pelo menos um código CNAE.")
+    elif invalid:
+        st.error(
+            "O código CNAE deve conter apenas números. "
+            f"Valor(es) inválido(s): {', '.join(invalid)}"
+        )
     elif not os.path.isdir(data_dir):
         st.error(f"Pasta não encontrada: {data_dir}")
     else:
